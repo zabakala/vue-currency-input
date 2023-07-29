@@ -162,6 +162,9 @@ export class CurrencyInput {
       if (this.minValue >= 0) {
         formattedValue = formattedValue.replace(this.currencyFormat.negativePrefix, this.currencyFormat.prefix)
       }
+      if (this.focus && typeof this.options.accountingSign !== 'boolean' && this.options.accountingSign?.show && this.options.accountingSign?.hideOnFocus) {
+        formattedValue = formattedValue.replace('(', '-').replace(')', '')
+      }
       if (this.options.currencyDisplay === CurrencyDisplay.hidden || (this.focus && this.options.hideCurrencySymbolOnFocus)) {
         formattedValue = formattedValue
           .replace(this.currencyFormat.negativePrefix, this.currencyFormat.minusSign !== undefined ? this.currencyFormat.minusSign : '(')
@@ -194,6 +197,18 @@ export class CurrencyInput {
           let caretPositionFromLeft = value.length - selectionStart
           const newValueLength = this.formattedValue.length
           if (this.currencyFormat.minusSign === undefined && (value.startsWith('(') || value.startsWith('-')) && !value.endsWith(')')) {
+            console.info(
+              'IF 1',
+              'value',
+              value,
+              'formattedValue',
+              this.formattedValue,
+              this.currencyFormat.negativeSuffix,
+              'selectionStart',
+              selectionStart,
+              this.formattedValue.substring(selectionStart).length,
+              this.currencyFormat.negativeSuffix.length > 1 ? this.formattedValue.substring(selectionStart).length : 1
+            )
             return newValueLength - this.currencyFormat.negativeSuffix.length > 1 ? this.formattedValue.substring(selectionStart).length : 1
           }
           if (
@@ -243,7 +258,9 @@ export class CurrencyInput {
     this.el.addEventListener('blur', () => {
       this.focus = false
       this.format(this.currencyFormat.format(this.validateValueRange(this.numberValue)))
+      console.info('BLUR listener', this.numberValueOnFocus, this.numberValue)
       if (this.numberValueOnFocus !== this.numberValue) {
+        console.info('BLUR - change trigger', this.getValue())
         this.onChange(this.getValue())
       }
     })

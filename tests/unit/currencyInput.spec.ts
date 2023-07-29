@@ -156,6 +156,15 @@ describe('Currency Input', () => {
           currencyInput.setOptions({ locale: 'nl', currency: 'EUR', hideCurrencySymbolOnFocus: true, accountingSign: true })
           expectCaretPosition(el.value.length, 2)
         })
+
+        /**
+         * (€ 5)| -> -5|
+         */
+        it('should set the caret position after the last digit number when targeting the end of the accounting sign', () => {
+          currencyInput.setValue(-5)
+          currencyInput.setOptions({ locale: 'nl', currency: 'EUR', hideCurrencySymbolOnFocus: true, accountingSign: { show: true, hideOnFocus: true } })
+          expectCaretPosition(el.value.length, 1)
+        })
       })
 
       describe('hideCurrencySymbolOnFocus is false', () => {
@@ -186,6 +195,20 @@ describe('Currency Input', () => {
           currencyInput.setValue(-1)
           currencyInput.setOptions({ locale: 'en', currency: 'EUR', currencyDisplay: CurrencyDisplay.hidden, accountingSign: true })
           expectCaretPosition(el.value.length, 2)
+        })
+
+        /**
+         * (1)| -> -1|
+         */
+        it('should set the caret position after the last digit number when targeting the end of the accounting sign', () => {
+          currencyInput.setValue(-1)
+          currencyInput.setOptions({
+            locale: 'en',
+            currency: 'EUR',
+            currencyDisplay: CurrencyDisplay.hidden,
+            accountingSign: { show: true, hideOnFocus: true }
+          })
+          expectCaretPosition(el.value.length, 1)
         })
 
         /**

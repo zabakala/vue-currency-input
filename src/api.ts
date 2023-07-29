@@ -3,6 +3,11 @@ import { Ref } from 'vue'
 /**
  * @internal
  */
+export interface Accounting {
+  show: boolean
+  hideOnFocus: boolean
+}
+
 export interface CurrencyInputValue {
   number: number | null
   formatted: string | null
@@ -29,7 +34,7 @@ export enum ValueScaling {
 }
 
 export interface CurrencyInputOptions {
-  accountingSign?: boolean
+  accountingSign?: Accounting | boolean
   autoDecimalDigits?: boolean
   currency: string
   currencyDisplay?: CurrencyDisplay
