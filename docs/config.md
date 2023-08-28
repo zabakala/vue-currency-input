@@ -41,6 +41,10 @@ Whether to hide the currency symbol on focus. Default is `true`.
 
 Whether to hide the grouping separator on focus. Default is `true`.
 
+### hideNegligibleDecimalDigitsOnBlur
+
+Whether to hide negligible decimal digits on blur. Default is `true`.
+
 ### hideNegligibleDecimalDigitsOnFocus
 
 Whether to hide negligible decimal digits on focus. Default is `true`.

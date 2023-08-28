@@ -35,6 +35,7 @@ export interface CurrencyInputOptions {
   currencyDisplay?: CurrencyDisplay
   hideCurrencySymbolOnFocus?: boolean
   hideGroupingSeparatorOnFocus?: boolean
+  hideNegligibleDecimalDigitsOnBlur?: boolean
   hideNegligibleDecimalDigitsOnFocus?: boolean
   locale?: string
   precision?: NumberRange | number

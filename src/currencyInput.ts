@@ -9,6 +9,7 @@ export const DEFAULT_OPTIONS = {
   currencyDisplay: undefined,
   hideGroupingSeparatorOnFocus: true,
   hideCurrencySymbolOnFocus: true,
+  hideNegligibleDecimalDigitsOnBlur: true,
   hideNegligibleDecimalDigitsOnFocus: true,
   precision: undefined,
   autoDecimalDigits: false,
@@ -29,6 +30,7 @@ export class CurrencyInput {
   private numberMask!: InputMask
   private formattedValue!: string
   private focus!: boolean
+  private blur!: boolean
   private minValue!: number
   private maxValue!: number
   private valueScaling: number | undefined
@@ -71,20 +73,26 @@ export class CurrencyInput {
       ...DEFAULT_OPTIONS,
       ...options
     }
+
     if (this.options.autoDecimalDigits) {
+      this.options.hideNegligibleDecimalDigitsOnBlur = false
       this.options.hideNegligibleDecimalDigitsOnFocus = false
     }
+
     if (!this.el.getAttribute('inputmode')) {
       this.el.setAttribute('inputmode', this.options.autoDecimalDigits ? 'numeric' : 'decimal')
     }
+
     this.currencyFormat = new CurrencyFormat(this.options)
     this.numberMask = this.options.autoDecimalDigits ? new AutoDecimalDigitsInputMask(this.currencyFormat) : new DefaultInputMask(this.currencyFormat)
+
     const valueScalingOptions = {
       [ValueScaling.precision]: this.currencyFormat.maximumFractionDigits,
       [ValueScaling.thousands]: 3,
       [ValueScaling.millions]: 6,
       [ValueScaling.billions]: 9
     }
+
     this.valueScaling = this.options.valueScaling ? valueScalingOptions[this.options.valueScaling] : undefined
     this.valueScalingFractionDigits =
       this.valueScaling !== undefined && this.options.valueScaling !== ValueScaling.precision
@@ -127,24 +135,33 @@ export class CurrencyInput {
     return value != null ? Math.min(Math.max(value, this.minValue), this.maxValue) : value
   }
 
-  private format(value: string | null, hideNegligibleDecimalDigits = false) {
+  private format(value: string | null, hideNegligibleDecimalDigitsOnFocus = false, hideNegligibleDecimalDigitsOnBlur = false) {
     if (value != null) {
       if (this.decimalSymbolInsertedAt !== undefined) {
         value = this.currencyFormat.normalizeDecimalSeparator(value, this.decimalSymbolInsertedAt)
         this.decimalSymbolInsertedAt = undefined
       }
+
       const conformedValue = this.numberMask.conformToMask(value, this.formattedValue)
       let formattedValue
+
       if (typeof conformedValue === 'object') {
         const { numberValue, fractionDigits } = conformedValue
         let { maximumFractionDigits, minimumFractionDigits } = this.currencyFormat
-        if (this.focus) {
-          minimumFractionDigits = hideNegligibleDecimalDigits
-            ? fractionDigits.replace(/0+$/, '').length
-            : Math.min(maximumFractionDigits, fractionDigits.length)
+
+        if (this.focus || this.blur || (!this.focus && this.blur)) {
+          minimumFractionDigits =
+            hideNegligibleDecimalDigitsOnFocus || hideNegligibleDecimalDigitsOnBlur || (!this.focus && this.blur)
+              ? fractionDigits.replace(/0+$/, '').length
+              : Math.min(maximumFractionDigits, fractionDigits.length)
         } else if (Number.isInteger(numberValue) && !this.options.autoDecimalDigits && (this.options.precision === undefined || minimumFractionDigits === 0)) {
           minimumFractionDigits = maximumFractionDigits = 0
+        } else if (this.focus === undefined && this.blur === undefined) {
+          minimumFractionDigits = this.options.hideNegligibleDecimalDigitsOnBlur
+            ? fractionDigits.replace(/0+$/, '').length
+            : Math.min(maximumFractionDigits, fractionDigits.length)
         }
+
         formattedValue =
           this.toInteger(Math.abs(numberValue)) > Number.MAX_SAFE_INTEGER
             ? this.formattedValue
@@ -231,10 +248,13 @@ export class CurrencyInput {
 
     this.el.addEventListener('focus', () => {
       this.focus = true
+      this.blur = false
       this.numberValueOnFocus = this.numberValue
+
       setTimeout(() => {
         const { value, selectionStart, selectionEnd } = this.el
         this.format(value, this.options.hideNegligibleDecimalDigitsOnFocus)
+
         if (selectionStart != null && selectionEnd != null && Math.abs(selectionStart - selectionEnd) > 0) {
           this.setCaretPosition(0, this.el.value.length)
         } else if (selectionStart != null) {
@@ -246,7 +266,10 @@ export class CurrencyInput {
 
     this.el.addEventListener('blur', () => {
       this.focus = false
-      this.format(this.currencyFormat.format(this.validateValueRange(this.numberValue)))
+      this.blur = true
+
+      this.format(this.currencyFormat.format(this.validateValueRange(this.numberValue)), false, this.options.hideNegligibleDecimalDigitsOnBlur)
+
       if (this.numberValueOnFocus !== this.numberValue) {
         this.onChange(this.getValue())
       }
